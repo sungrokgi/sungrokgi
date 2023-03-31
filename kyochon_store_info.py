@@ -3,7 +3,7 @@ import urllib.request
 import pandas as pd
 result = []
 for page in range(1,18):
-    for subpage in range(1):
+    for subpage in range(1,46):
         try:
             url= 'http://www.kyochon.com/shop/domestic.asp'
             kyochon_url = url+'?sido1='+ str(page) + '&sido2='+ str(subpage)
