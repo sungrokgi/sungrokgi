@@ -1,0 +1,83 @@
+import org.openqa.selenium.By;
+import org.openqa.selenium.Keys;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import io.github.bonigarcia.wdm.WebDriverManager;
+import java.net.URL;
+import java.net.HttpURLConnection;
+import java.io.IOException;
+import java.io.File;
+import java.util.concurrent.TimeUnit;
+import java.util.List;
+import java.util.ArrayList;
+
+public class ImageCrawler {
+    
+    public static void main(String[] args) {
+        WebDriver driver = setChromeDriver();
+        String searchKey = System.console().readLine("검색 키워드 입력:");
+        crawlingImg(driver, searchKey);
+        driver.quit();
+    }
+    
+    public static WebDriver setChromeDriver() {
+        ChromeOptions options = new ChromeOptions();
+        WebDriverManager.chromedriver().setup();
+        WebDriver driver = new ChromeDriver(options);
+        return driver;
+    }
+    
+    public static void createDirectory(String directory) {
+        File file = new File(directory);
+        if (!file.exists()) {
+            file.mkdir();
+        }
+    }
+    
+    public static void crawlingImg(WebDriver driver, String val) {
+        driver.get("https://www.google.co.kr/imghp?hl=ko&tab=wi&authuser=0&ogbl");
+        WebElement elem = driver.findElement(By.name("q"));
+        elem.sendKeys(val);
+        elem.sendKeys(Keys.RETURN);
+        driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
+        List<WebElement> imgs = driver.findElements(By.cssSelector(".rg_i.Q4LuWd"));
+        String dir = "C:/Users/sungr/OneDrive/바탕 화면/imgs" + "//" + val;
+        createDirectory(dir);
+        int count = 1;
+        for (WebElement img : imgs) {
+            if (count > 5) {
+                break;
+            }
+            try {
+                img.click();
+                driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
+                WebElement imgElement = driver.findElement(By.xpath("//*[@id=\"islrg\"]/div[1]/div[" + count + "]/a[1]/div[1]/img"));
+                String imgUrl = imgElement.getAttribute("src");
+                downloadImage(imgUrl, dir, val, count);
+                count++;
+                if (count >= 260) {
+                    break;
+                }
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
+        }
+    }
+    
+    public static void downloadImage(String imgUrl, String dir, String val, int count) throws IOException {
+        URL url = new URL(imgUrl);
+        HttpURLConnection httpConn = (HttpURLConnection) url.openConnection();
+        int responseCode = httpConn.getResponseCode();
+        if (responseCode == HttpURLConnection.HTTP_OK) {
+            String fileName = val + count + ".jpg";
+            String filePath = dir + "\\" + fileName;
+            FileUtils.copyURLToFile(url, new File(filePath));
+            System.out.println("Image saved: " + fileName);
+        } else {
+            System.out.println("Image download failed with error code " + responseCode);
+        }
+        httpConn.disconnect();
+    }
+}
